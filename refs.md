@@ -1,5 +1,6 @@
 ### Refs
 - [secp256k1 Rust Docs](https://docs.rs/secp256k1/latest/secp256k1/)
+- [keccak](https://keccak.team/files/Keccak-submission-3.pdf)
 - [Hierarchical key generation](https://alexey-shepelev.medium.com/hierarchical-key-generation-fc27560f786)
 
 #### Source Code Refs

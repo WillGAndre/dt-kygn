@@ -1,2 +1,4 @@
-### dt-hc-kygn
-deterministic hierarchical key generation based on [secp256k1](https://docs.rs/secp256k1/latest/secp256k1/).
+### dt-kygn
+deterministic key generation based on [secp256k1](https://docs.rs/secp256k1/latest/secp256k1/) curve.
+
+Most standardized deterministic key generation schemes, such as those defined by [BIP32](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki) & [BIP44](https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki) for Bitcoin and similarly adopted in Ethereum wallets, use a hierarchical structure. They derive child keys from a master seed through a path (e.g., m/44'/60'/0'/0/0 for Ethereum), allowing for organized derivation of multiple keys and addresses. This method, focusing on the combination of a UID and public key hashing, doesn't follow this hierarchical path structure allowing for a more loose representation.
