@@ -1,11 +1,11 @@
 pub mod error;
 
+use uuid::Uuid;
 use error::Error;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
-use secp256k1::{PublicKey, SecretKey, Message};
-use secp256k1::rand::{thread_rng};
-use secp256k1::hashes::sha256;
+use secp256k1::{PublicKey, SecretKey};
+use secp256k1::rand::thread_rng;
 use tiny_keccak::{Hasher, Keccak};
 
 pub fn get_address_from_public_key(pubkey: &PublicKey) -> Vec<u8> {
@@ -15,6 +15,16 @@ pub fn get_address_from_public_key(pubkey: &PublicKey) -> Vec<u8> {
     hasher.update(pubkey_bytes);
     hasher.finalize(&mut hash);
     hash[12..32].to_vec()
+}
+
+pub fn get_address_space_size(uid: &[u8]) -> u64 {
+    2u64.pow((uid.len() * 8) as u32)
+}
+
+pub fn generate_safe_uid() -> [u8; 16] {
+    Uuid::new_v4()
+        .as_bytes()
+        .to_owned()
 }
 
 #[derive(Debug)]
@@ -100,6 +110,9 @@ impl Keypair {
     }
 
     fn child_seed(&self, uid: &[u8]) -> StdRng {
+        if uid.len() < 16 {
+            println!("UID should be of at least 16 bytes");
+        }
         let mut hash = [0u8; 32];
         let pubkey = &self.public_key.serialize_uncompressed()[1..65];
         let pubkey_hash: [u8; 32] = self.apply_pub_hash(pubkey);
@@ -124,10 +137,26 @@ impl Keypair {
 
 #[cfg(test)]
 mod tests {
-    use rand::{rngs::StdRng, SeedableRng};
-    use secp256k1::{hashes::sha256, Message, PublicKey};
+    use secp256k1::{hashes::sha256, Message};
 
-    use crate::Keypair;
+    use crate::{Keypair, get_address_space_size, generate_safe_uid};
+
+    #[test]
+    fn generate_uid_size_0() { // Insecure UID
+        let uid = b"12";
+        let mut base = String::from("0x");
+        base.push_str(&hex::encode(uid));
+        println!("Insecure UID: {}", base);
+        assert_eq!(65536, get_address_space_size(uid));
+    }
+
+    #[test]
+    fn generate_uid_size_1() { // Secure UID
+        let uid = generate_safe_uid();
+        let mut base = String::from("0x");
+        base.push_str(&hex::encode(uid));
+        println!("Secure UID: {}", base);
+    }
 
     #[test]
     fn generate_new() {
@@ -160,8 +189,8 @@ mod tests {
     #[test]
     fn derivation_0() {
         let root = Keypair::generate_new_with_thread_rng();
-        let uid = b"uid_1234";
-        let child = root.derive_child(uid).unwrap();
+        let uid = generate_safe_uid();
+        let child = root.derive_child(&uid).unwrap();
         println!("Root Address: {}", root.get_address().to_string());
         println!("Child Address: {}", child.get_address().to_string());
 
@@ -169,7 +198,7 @@ mod tests {
         let sig = child.secret_key.sign_ecdsa(msg);
         assert!(sig.verify(&msg, &child.public_key).is_ok());
         assert!(sig.verify(&msg, &root.public_key).is_err());
-        let mut seed = root.child_seed(uid);
+        let mut seed = root.child_seed(&uid);
         let (_, reconstructed_child_pub_key) = secp256k1::generate_keypair(&mut seed);
         assert!(sig.verify(&msg, &reconstructed_child_pub_key).is_ok());
     }
@@ -177,13 +206,13 @@ mod tests {
     #[test]
     fn derivation_1() {
         let root = Keypair::generate_new_with_thread_rng();
-        let uid = b"uid_1234";
-        let child = root.derive_child(uid).unwrap();
+        let uid = generate_safe_uid();
+        let child = root.derive_child(&uid).unwrap();
         println!("Root Address: {}", root.get_address().to_string());
         println!("Child Address: {}", child.get_address().to_string());
 
         // Generate Child Seed (used in derivation) & fetch it's public key
-        let mut seed = root.child_seed(uid);
+        let mut seed = root.child_seed(&uid);
         let (_, reconstructed_child_pub_key) = secp256k1::generate_keypair(&mut seed);
 
         // Child Gen log & signature

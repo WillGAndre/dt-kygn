@@ -14,3 +14,9 @@ array-bytes = { version = "6.2" }
 rand        = { version = "0.8", features = ["std_rng"] }
 secp256k1   = { version = "^0.28", features = ["global-context", "rand", "rand-std", "hashes"] }
 tiny-keccak = { version = "2.0", features = ["keccak"] }
+
+[dependencies.uuid]
+version = "1.7.0"
+features = [
+    "v4"                # Lets you generate random UUIDs
+]
